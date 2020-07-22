@@ -47,6 +47,7 @@ class tomcat::config {
   $hosts = $::tomcat::hosts
   $contexts = $::tomcat::contexts
   $use_simpletcpcluster = $::tomcat::use_simpletcpcluster
+  $cluster_membership_address = $::tomcat::cluster_membership_address
   $cluster_membership_port = $::tomcat::cluster_membership_port
   $cluster_membership_bind_address = $::tomcat::cluster_membership_bind_address
   $cluster_membership_domain = $::tomcat::cluster_membership_domain
@@ -54,8 +55,8 @@ class tomcat::config {
   $cluster_receiver_port = $::tomcat::cluster_receiver_port
   $cluster_farm_deployer = $::tomcat::cluster_farm_deployer
   $cluster_parent_real = $::tomcat::cluster_parent_real
-  $cluster_farm_deployer_watchdir = $::tomcat::cluster_farm_deployer_watchdir
-  $cluster_farm_deployer_deploydir = $::tomcat::cluster_farm_deployer_deploydir
+  $cluster_farm_deployer_watchdir_real = $::tomcat::cluster_farm_deployer_watchdir_real
+  $cluster_farm_deployer_deploydir_real = $::tomcat::cluster_farm_deployer_deploydir_real
   $cluster_farm_deployer_watch_enabled = $::tomcat::cluster_farm_deployer_watch_enabled
   $combined_realm = $::tomcat::combined_realm
   $lockout_realm = $::tomcat::lockout_realm
@@ -98,6 +99,8 @@ class tomcat::config {
   $jpda_suspend = $::tomcat::jpda_suspend
   $jpda_opts_real = $::tomcat::jpda_opts_real
   $custom_variables = $::tomcat::custom_variables
+  $log_handler_class_real = $::tomcat::log_handler_class_real
+  $log_formatter_class_real = $::tomcat::log_formatter_class_real
 
   $notify_service = $::tomcat::restart_on_change ? {
     true  => Service[$::tomcat::service_name_real],
@@ -442,6 +445,18 @@ class tomcat::config {
       password => $::tomcat::admin_password,
       roles    => ['manager-gui', 'manager-script', 'admin-gui', 'admin-script']
     }
+  }
+
+  # -------------------#
+  # logging.properties #
+  # -------------------#
+  file { 'tomcat default logging.properties':
+    ensure  => present,
+    path    => "${::tomcat::catalina_base_real}/conf/logging.properties",
+    content => epp("${module_name}/common/logging_properties.epp", { 'handler_class' => $log_handler_class_real, 'formatter_class' => $log_formatter_class_real }),
+    owner   => $tomcat_user,
+    group   => $tomcat_group,
+    notify  => $notify_service
   }
 
   # Configure users and roles defined in $tomcat_users and $tomcat_roles

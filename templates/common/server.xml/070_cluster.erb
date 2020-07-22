@@ -6,7 +6,7 @@
                   notifyListenersOnReplication="true"/>
          <Channel className="org.apache.catalina.tribes.group.GroupChannel">
             <Membership className="org.apache.catalina.tribes.membership.McastService"
-                        address="228.0.0.4"
+                        address="<%= @cluster_membership_address %>"
 <%- if @cluster_membership_bind_address -%>
                         bind="<%= @cluster_membership_bind_address %>"
 <%- end -%>

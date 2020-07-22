@@ -3,12 +3,13 @@ require 'spec_helper'
 describe 'tomcat' do
   let :facts do
     {
-      :osfamily                  => 'RedHat',
-      :operatingsystemmajrelease => '7',
-      :operatingsystem           => 'RedHat',
-      :concat_basedir            => '/puppetconcat',
+      osfamily: 'RedHat',
+      operatingsystemmajrelease: '7',
+      operatingsystem: 'RedHat',
+      concat_basedir: '/puppetconcat',
     }
   end
+
   describe 'general assumptions' do
     it { is_expected.to contain_class('tomcat') }
     it { is_expected.to contain_class('tomcat::params') }
@@ -18,11 +19,13 @@ describe 'tomcat' do
   end
   describe 'optional features' do
     context 'extras libraries' do
-      let(:params) { { :extras_enable => true } }
+      let(:params) { { extras_enable: true } }
+
       it { is_expected.to contain_class('tomcat::extras').that_requires('Class[tomcat::install]') }
     end
     context 'firewall management' do
-      let(:params) { { :manage_firewall => true } }
+      let(:params) { { manage_firewall: true } }
+
       it { is_expected.to contain_class('tomcat::firewall') }
     end
   end

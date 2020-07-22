@@ -1,0 +1,4 @@
+---
+Rakefile:
+  default_disabled_lint_checks:
+    - '140chars'

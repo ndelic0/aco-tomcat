@@ -242,6 +242,7 @@ class tomcat (
   #..................................................................................
   # cluster (experimental)
   $use_simpletcpcluster                = false,
+  $cluster_membership_address          = '228.0.0.4',
   $cluster_membership_port             = '45565',
   $cluster_membership_bind_address     = undef, # useful if there are multiple NICs and multicast isn't using the right one
   $cluster_membership_domain           = 'tccluster',
@@ -361,7 +362,10 @@ class tomcat (
   $lang                       = undef,
   $shutdown_wait              = 30,
   $shutdown_verbose           = false,
-  $custom_variables           = {}) inherits tomcat::params {
+  $custom_variables           = {},
+  $log_handler_class          = undef,
+  $log_formatter_class        = undef,
+) inherits tomcat::params {
   # parameters validation
   if $install_from !~ /^(package|archive)$/ {
     fail('$install_from must be either \'package\' or \'archive\'')
@@ -408,6 +412,27 @@ class tomcat (
   } else {
     $extras_source_real = $extras_source
   }
+
+  if $log_handler_class == undef {
+    $log_handler_class_real = $maj_version ? {
+      '7'       => 'org.apache.juli.FileHandler',
+      '8'       => 'org.apache.juli.AsyncFileHandler',
+      'default' =>  'org.apache.juli.FileHandler'
+    }
+  } else {
+    $log_handler_class_real = $log_handler_class
+  }
+
+  if $log_formatter_class == undef {
+    $log_formatter_class_real = $maj_version ? {
+      '7'       => 'java.util.logging.SimpleFormatter',
+      '8'       => 'org.apache.juli.OneLineFormatter',
+      'default' => 'org.apache.juli.OneLineFormatter'
+    }
+  } else {
+    $log_formatter_class_real = $log_formatter_class
+  }
+
 
   if $admin_webapps_package_name == undef {
     $admin_webapps_package_name_real = $::osfamily ? {

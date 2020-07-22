@@ -212,6 +212,7 @@ define tomcat::instance (
   #..................................................................................
   # cluster (experimental)
   $use_simpletcpcluster       = false,
+  $cluster_membership_address = $::tomcat::cluster_membership_address,
   $cluster_membership_port    = '45565',
   # use cluster_membership_bind_address to specify which NIC is usd for multicast
   # if this causes crash, try starting tomcat without both ipv4 & ipv6, e.g. -Djava.net.preferIPv4Stack=true
@@ -332,7 +333,11 @@ define tomcat::instance (
   $lang                       = undef,
   $shutdown_wait              = 30,
   $shutdown_verbose           = false,
-  $custom_variables           = {}) {
+  $custom_variables           = {},
+  #logging.properties
+  $log_handler_class          = undef,
+  $log_formatter_class        = undef,
+) {
   # The base class must be included first
   if !defined(Class['tomcat']) {
     fail('You must include the tomcat base class before using any tomcat defined resources')
@@ -406,6 +411,20 @@ define tomcat::instance (
     }
   } else {
     $catalina_base_real = $catalina_base
+  }
+
+  if $log_handler_class == undef {
+    case ($version_real == $::tomcat::version_real) {
+      true :   { $log_handler_class_real = $::tomcat::log_handler_class_real }
+      default: { $log_handler_class_real = 'org.apache.juli.FileHandler' }
+    }
+  }
+
+  if $log_formatter_class == undef {
+    case ($version_real == $::tomcat::version_real) {
+      true :   { $log_formatter_class_real = $::tomcat::log_formatter_class_real }
+      default: { $log_formatter_class_real = 'java.util.logging.SimpleFormatter' }
+    }
   }
 
   if $jasper_home == undef {
@@ -1136,6 +1155,13 @@ define tomcat::instance (
     }
   }
 
+  # Template uses no variable, just </Host>
+  concat::fragment { "instance ${name} server.xml host close":
+    order   => 190,
+    content => template("${module_name}/common/server.xml/190_host_close.erb"),
+    target  => "instance ${name} server configuration"
+  }
+
   concat::fragment { "instance ${name} server.xml footer":
     order   => 200,
     content => template("${module_name}/common/server.xml/200_footer.erb"),
@@ -1208,6 +1234,19 @@ define tomcat::instance (
     ensure  => present,
     path    => $config_path_real,
     content => template("${module_name}/common/setenv.erb"),
+    owner   => $tomcat_user,
+    group   => $tomcat_group,
+    notify  => $notify_service
+  }
+
+  # -------------------#
+  # logging.properties #
+  # -------------------#
+
+  file { "instance ${name} logging.properties":
+    ensure  => present,
+    path    => "${catalina_base_real}/conf/logging.properties",
+    content => epp("${module_name}/common/logging_properties.epp", { 'handler_class' => $log_handler_class_real, 'formatter_class' => $log_formatter_class_real }),
     owner   => $tomcat_user,
     group   => $tomcat_group,
     notify  => $notify_service
